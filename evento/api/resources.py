@@ -3,9 +3,22 @@ from tastypie import fields, utils
 from evento.models import *
 from django.contrib.auth.models import User
 from tastypie.authorization import Authorization
-
+from tastypie.exceptions import Unauthorized
 
 class TipoInscricaoResource(ModelResource):
+    def obj_create(self, bundle, **kwargs):
+        if not(TipoInscricao.objects.filter(descricao=bundle.data['descricao'])):
+            tipo = TipoInscricao()
+            tipo.descricao = bundle.data['descricao'].upper()
+            tipo.save()
+            bundle.obj = tipo
+            return bundle
+        else:
+            raise Unauthorized("Ja existe um tipo inscrição com esse nome!")
+
+    def obj_delete_list(self, bundle, **kwargs):
+        raise Unauthorized("Não é possivel deletar toda a lista!")
+
     class Meta:
         queryset = TipoInscricao.objects.all()
         allowed_methods = ['get', 'post', 'delete', 'put']
@@ -50,6 +63,26 @@ class EventoResource(ModelResource):
         }
 
 class InscricaoResource(ModelResource):
+    def obj_create(self, bundle, **kwargs):
+        x = bundle.data['pessoa'].split("/")
+        print(x[4])
+        if not(Inscricoes.objects.filter(pessoa = x[4])):
+            e = bundle.data['evento'].split("/")
+            t = bundle.data['tipo'].split("/")
+
+            inscricao = Inscricoes()
+
+            inscricao.pessoa = PessoaFisica.objects.get(pk = int(x[4]) )
+            inscricao.evento = Evento.objects.get(pk = int(e[4]) )
+            inscricao.tipoInscricao = TipoInscricao.objects.get(pk = int(t[4]) )
+
+            inscricao.dataEHoraDaInscricao = bundle.data["dataEHoraDaInscricao"]
+            inscricao.save()
+            bundle.obj = inscricao
+            return bundle
+        else:
+            raise Unauthorized("Pessoa ja cadastrada no evento!")
+
     pessoa = fields.ToOneField(PessoaFisicaResource, 'pessoa')
     evento = fields.ToOneField(EventoResource, 'evento')
     tipo = fields.ToOneField(TipoInscricaoResource, 'tipoInscricao')
