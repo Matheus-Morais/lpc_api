@@ -65,8 +65,10 @@ class EventoResource(ModelResource):
 class InscricaoResource(ModelResource):
     def obj_create(self, bundle, **kwargs):
         x = bundle.data['pessoa'].split("/")
+        y = bundle.data['evento'].split("/")
         print(x[4])
-        if not(Inscricoes.objects.filter(pessoa = x[4])):
+        print(y[4])
+        if not(Inscricoes.objects.filter(pessoa = x[4]) and Inscricoes.objects.filter(evento = y[4])):
             e = bundle.data['evento'].split("/")
             t = bundle.data['tipo'].split("/")
 
